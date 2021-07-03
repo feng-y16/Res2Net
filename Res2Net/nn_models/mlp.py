@@ -100,8 +100,8 @@ class SecondOrderAutoEncoder(torch.nn.Module):
         super(SecondOrderAutoEncoder, self).__init__()
         assert input_dim % 2 == 0
         self.ae = MLPAutoEncoder(input_dim, hidden_dim, input_dim // 2, non_linearity=non_linearity)
-        self.alpha = torch.nn.Parameter(torch.randn(1))
-        self.beta = torch.nn.Parameter(torch.randn(1))
+        self.alpha = torch.nn.Parameter(-torch.randn(1, input_dim // 2))
+        self.beta = 0
 
     def forward(self, t, x):
         size = x.size()

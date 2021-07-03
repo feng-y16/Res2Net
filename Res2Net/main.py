@@ -42,8 +42,8 @@ def generate_data(input_dim, data_size):
 def main(args):
     x, y = generate_data(args.input_dim, args.data_size)
     x, y = torch.tensor(x).to(args.device).float(), torch.tensor(y).to(args.device).float()
-    model = FirstOrderODENet(args.input_dim, args.hidden_dim, args.lr).to(args.device)
-    # model = SecondOrderODENet(args.input_dim, args.hidden_dim, args.lr).to(args.device)
+    # model = FirstOrderODENet(args.input_dim, args.hidden_dim, args.lr).to(args.device)
+    model = SecondOrderODENet(args.input_dim, args.hidden_dim, args.lr).to(args.device)
     stats = {'train_loss': [], 'test_loss': []}
     with tqdm(total=args.total_batches) as t:
         for step in range(args.total_batches):
