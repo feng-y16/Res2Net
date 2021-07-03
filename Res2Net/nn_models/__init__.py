@@ -1,1 +1,2 @@
-from nn_models import *
+from nn_models.mlp import *
+from nn_models.mlp import *
