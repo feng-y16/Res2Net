@@ -7,7 +7,7 @@ import pdb
 
 class FirstOrderODENet(torch.nn.Module):
 
-    def __init__(self, input_dim, hidden_dim, learn_rate, non_linearity='tanh', tol=1e-9):
+    def __init__(self, input_dim, hidden_dim, learn_rate, non_linearity='tanh', tol=1e-6):
         super(FirstOrderODENet, self).__init__()
         self.ode_rhs = FirstOrderAutoEncoder(input_dim, hidden_dim, non_linearity)
         self.integration_time = torch.tensor([0, 1]).float()
@@ -37,7 +37,7 @@ class FirstOrderODENet(torch.nn.Module):
 
 class SecondOrderODENet(torch.nn.Module):
 
-    def __init__(self, input_dim, hidden_dim, learn_rate, non_linearity='tanh', tol=1e-9):
+    def __init__(self, input_dim, hidden_dim, learn_rate, non_linearity='tanh', tol=1e-6):
         super(SecondOrderODENet, self).__init__()
         self.ode_rhs = SecondOrderAutoEncoder(input_dim, hidden_dim, non_linearity)
         self.integration_time = torch.tensor([0, 1]).float()

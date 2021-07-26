@@ -4,6 +4,7 @@ import numpy as np
 import argparse
 import random
 import torch
+import pickle
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import pdb
@@ -17,20 +18,21 @@ def get_args():
     parser.add_argument('--input-dim', type=int, default=64)
     parser.add_argument('--hidden-dim', type=int, default=256)
     parser.add_argument('--data-size', type=int, default=2000)
-    parser.add_argument('--input-noise', type=float, default=0)
+    parser.add_argument('--input-noise', type=float, default=0.1)
     parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--train-split', type=float, default=0.8)
-    parser.add_argument('--total-batches', type=float, default=500)
+    parser.add_argument('--total-batches', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=256)
     parser.add_argument('--model-name', type=str, default='FirstOrderODENet')
     parser.add_argument('--result-path', type=str, default='../results')
     parser.add_argument('--data-path', type=str, default='../data')
     parser.add_argument(
         '--device', type=str,
-        default='cuda' if torch.cuda.is_available() else 'cpu')
+        default='cuda:0' if torch.cuda.is_available() else 'cpu')
+    parser.add_argument('--retrain', action='store_true', default=False)
+    parser.add_argument('--regenerate-data', action='store_true', default=False)
     args = parser.parse_known_args()[0]
     assert args.input_dim % 2 == 0
-    args.device = 'cpu'
     return args
 
 
@@ -48,7 +50,7 @@ def generate_data(input_dim, data_size):
 
 
 def draw(stats, save_file_wo_ext):
-    plt.rcParams['font.sans-serif'] = ['Times New Roman']
+    # plt.rcParams['font.sans-serif'] = ['Times New Roman']
     plt.rcParams.update({'figure.autolayout': True})
     plt.rc('font', size=23)
     fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(16, 9))
@@ -57,8 +59,8 @@ def draw(stats, save_file_wo_ext):
     axes.plot(iterations, stats['test_loss'][:, 0], label='test')
     axes.set_xlabel('Iterations')
     axes.set_ylabel('Loss')
-    ax.grid(True)
-    ax.legend(loc='best')
+    axes.grid(True)
+    axes.legend(loc='best')
     plt.savefig(save_file_wo_ext + '.png')
     plt.savefig(save_file_wo_ext + '.pdf')
     plt.close()
@@ -77,7 +79,7 @@ def train(args):
     if not os.path.isdir(args.data_path):
         os.makedirs(args.data_path)
     data_file_path = os.path.join(args.data_path, 'data.npz')
-    if os.path.isfile(data_file_path):
+    if os.path.isfile(data_file_path) and not args.regenerate_data:
         x = np.load(data_file_path)['x']
         y = np.load(data_file_path)['y']
     else:
@@ -115,24 +117,28 @@ def train(args):
 
 def main(args, redirect=True):
     save_path = '../results/' + args.model_name
+    save_stats_file = os.path.join(save_path, 'InputNoise_' + str(args.input_noise) + '_s' + str(args.seed) + '.pl')
+    save_drawing_file_wo_ext = os.path.join(save_path, 'InputNoise_' + str(args.input_noise) + '_s' + str(args.seed))
     if not os.path.isdir(save_path):
         os.makedirs(save_path)
     if redirect:
         stdout = sys.stdout
-        f = open(os.path.join(save_path, 's' + str(args.seed) + '.txt'), 'w+')
+        f = open(os.path.join(save_path, 'InputNoise_' + str(args.input_noise) + '_s' + str(args.seed) + '.txt'), 'w+')
         sys.stdout = f
     else:
         f = None
         stdout = None
-    stats = train(args)
+    if os.path.isfile(save_stats_file) and not args.retrain:
+        with open(save_stats_file, 'rb') as f:
+            stats = pickle.load(f)
+    else:
+        stats = train(args)
     if redirect:
         f.close()
         sys.stdout = stdout
 
-    save_stats_file = os.path.join(save_path, 's' + str(args.seed) + '.pl')
-    save_drawing_file_wo_ext = os.path.join(save_path, 's' + str(args.seed))
     draw(stats, save_drawing_file_wo_ext)
-    with open(save_stats_file, 'w') as f:
+    with open(save_stats_file, 'wb') as f:
         pickle.dump(stats, f, protocol=4)
 
 
